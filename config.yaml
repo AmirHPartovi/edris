@@ -1,11 +1,28 @@
+# === تنظیمات Ollama ===
 ollama:
-  model: llama2
-  port: 11434
+  api_url: http://localhost:11434/api/generate
+  default_model: deepseek-r1
 
+# === تعریف Experts ===
+experts:
+  codegemma:
+    model: codegemma
+  deepseek:
+    model: deepseek-r1
+  llava:
+    model: llava
+  translator:
+    p2e_model: persian-to-english
+    e2p_model: english-to-persian
+
+# === تنظیمات Backend ===
 backend:
   port: 8000
   frontend_origins:
     - http://localhost:5173
+    - http://127.0.0.1:3000
 
+# === مسیرهای Knowledge Base ===
 vectorstore:
-  path: ./backend/app/knowledge/vectorstore
+  docs_path: ./backend/app/knowledge/docs
+  store_path: ./backend/app/knowledge/vectorstore
