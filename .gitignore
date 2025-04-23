@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Vite
+dist/
+.vit/
+
+# Python
+backend/.venv/
+__pycache__/
+*.py[cod]
+
+# Env
+.env
+
+# Logs
+logs/
+*.log

@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./knowledge:/app/knowledge
+    environment:
+      - FRONTEND_ORIGINS=http://localhost:5173,http://127.0.0.1:3000
+      - OLLAMA_API=https://api.ollama.ai
+      - P2E_MODEL=persian-to-english
+      - E2P_MODEL=english-to-persian
+      - VECTORSTORE_PATH=/app/knowledge/vectorstore
+    restart: always
