@@ -1,0 +1,11 @@
+ollama:
+  model: llama2
+  port: 11434
+
+backend:
+  port: 8000
+  frontend_origins:
+    - http://localhost:5173
+
+vectorstore:
+  path: ./backend/app/knowledge/vectorstore
