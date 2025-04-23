@@ -12,8 +12,8 @@ experts:
   llava:
     model: llava
   translator:
-    p2e_model: persian-to-english
-    e2p_model: english-to-persian
+    p2e_model: hf.co/gyroing/Persian-to-English-Translation-mT5-V1-Q8_0-GGUF
+    e2p_model: hf.co/gyroing/English-to-Persian-Translation-mT5-V1-Q8_0-GGUF
 
 # === تنظیمات Backend ===
 backend:
