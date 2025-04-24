@@ -4,11 +4,40 @@ import MessageList from './components/MessageList';
 import MessageInput from './components/MessageInput';
 import SettingsModal from './components/SettingsModal';
 import KnowledgeModal from './components/KnowledgeModal';
+import EnhancedChat from './components/EnhancedChatUI';
 
-interface Props {
+interface EnhancedChatProps {
   onSettings: () => void;
   onKnowledge: () => void;
+  messages: { role: string; content: string }[];
+  setMessages: React.Dispatch<React.SetStateAction<{ role: string; content: string }[]>>;
+  params: {
+    model: string;
+    temperature: number;
+    max_tokens: number;
+    top_p: number;
+    frequency_penalty: number;
+    presence_penalty: number;
+    stop: string[];
+    stream: boolean;
+    prompt: string;
+    type: 'text';
+  };
+  setParams: React.Dispatch<React.SetStateAction<{
+    model: string;
+    temperature: number;
+    max_tokens: number;
+    top_p: number;
+    frequency_penalty: number;
+    presence_penalty: number;
+    stop: string[];
+    stream: boolean;
+    prompt: string;
+    type:  'text';
+  }>>;
 }
+
+// Remove this component as it's already imported from './components/EnhancedChatUI'
 
 const App: React.FC = () => {
   const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
@@ -24,48 +53,20 @@ const App: React.FC = () => {
     stop: ['\n\n'],
     stream: false,
     prompt: '',
-    type: 'text' as const,
+    type: 'text' as 'text' | 'image' | 'audio',
   });
 
   return (
-    <div className="flex h-full">
-      {/* Sidebar */}
-      <aside className="w-64 bg-white dark:bg-gray-900 border-r p-4 hidden md:block">
-        <button
-          className="w-full mb-4 p-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          onClick={() => setShowKnowledge(true)}
-        >
-          Manage Knowledge Stack
-        </button>
-        <button
-          className="w-full p-2 bg-green-600 text-white rounded hover:bg-green-700"
-          onClick={() => setShowSettings(true)}
-        >
-          Model Settings
-        </button>
-      </aside>
-
-      {/* Main Chat Area */}
-      <div className="flex flex-col flex-1">
-        <ChatHeader onSettings={() => setShowSettings(true)} onKnowledge={() => setShowKnowledge(true)} />
-        <MessageList messages={messages} />
-        <MessageInput
-          onSend={msg => setMessages(prev => [...prev, { role: 'user', content: msg }])}
-          onResponse={resp => setMessages(prev => [...prev, { role: 'assistant', content: resp }])}
-          params={params}
-        />
-      </div>
-
-      {/* Modals */}
-      {showSettings && (
-        <SettingsModal
-          params={params}
-          onChange={setParams}
-          onClose={() => setShowSettings(false)}
-        />
-      )}
-      {showKnowledge && <KnowledgeModal onClose={() => setShowKnowledge(false)} />}
-    </div>
+    <React.Fragment>
+      <EnhancedChat
+        messages={messages}
+        setMessages={setMessages}
+        params={params}
+        setParams={setParams}
+        onSettings={() => setShowSettings(true)}
+        onKnowledge={() => setShowKnowledge(true)}
+      />
+    </React.Fragment>
   );
 };
 

@@ -1,16 +1,8 @@
+# backend/app/experts/codegemma_expert.py
 import requests
-from app.utils.router import OLLAMA_API_URL, EXPERTS_CONFIG
 
 
 class CodegemmaExpert:
-    MODEL = EXPERTS_CONFIG['codegemma']['model']
-    API = OLLAMA_API_URL
-
-    def run(self, prompt: str, context: str = "") -> str:
-        full = f"# Context:\n{context}\n# Request Code for: {prompt}\n# Solution:"
-        resp = requests.post(self.API, json={
-            "model": self.MODEL,
-            "prompt": full,
-            "stream": False
-        })
-        return resp.json().get("response", "")
+    def run(self, prompt, context, **kwargs):
+        full = f"# Context:\n{context}\n# Code request:\n{prompt}\n# Solution:"
+        return requests.post("http://localhost:11434/api/generate", json={"model":"codegemma","prompt":full,**kwargs}).json().get("response","")

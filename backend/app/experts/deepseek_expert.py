@@ -1,16 +1,8 @@
+# backend/app/experts/deepseek_expert.py
 import requests
-from app.utils.router import OLLAMA_API_URL, EXPERTS_CONFIG
 
 
 class DeepseekExpert:
-    MODEL = EXPERTS_CONFIG['deepseek']['model']
-    API = OLLAMA_API_URL
-
-    def run(self, prompt: str, context: str = "") -> str:
-        full = f"# Context:\n{context}\n# Request Code for: {prompt}\n# Solution:"
-        resp = requests.post(self.API, json={
-            "model": self.MODEL,
-            "prompt": full,
-            "stream": False
-        })
-        return resp.json().get("response", "")
+    def run(self, prompt, context, **kwargs):
+        full = f"Context:\n{context}\nUser:{prompt}\nAssistant:"
+        return requests.post("http://localhost:11434/api/generate", json={"model":"deepseek-r1:latest","prompt":full,**kwargs}).json().get("response","")
