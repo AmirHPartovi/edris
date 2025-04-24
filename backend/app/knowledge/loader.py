@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import List, Optional
 from langchain_community.vectorstores import FAISS
 from langchain.docstore.document import Document
-from utils.embedder import get_embedding
-from utils.router import DOCS_PATH, VECTORSTORE_PATH
+from app.utils.embedder import get_embedding
+from app.utils.router import DOCS_PATH, VECTORSTORE_PATH
 
 
 def load_text(fp: Path) -> str:

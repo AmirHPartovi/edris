@@ -1,16 +1,15 @@
-# main.py
+from app.knowledge.loader import build_vectorstore, search_knowledge, extract_algorithms
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from pathlib import Path
-from dotenv import load_dotenv
+import pathlib
 import os
 import yaml
-
+from dotenv import load_dotenv
 from app.experts.translator import TranslatorExpert
 from app.utils.router import route_query
-from app.knowledge.loader import build_vectorstore, search_knowledge
+from app.config import FRONTEND_ORIGINS
 
 # Load environment variables
 BASE_DIR = Path(__file__).parent.parent.parent

@@ -1,67 +1,35 @@
 # utils/router.py
-from pathlib import Path
+
+from app.config import EXPERTS_CONFIG, DOCS_PATH, STORE_PATH
 from typing import Optional
-import yaml
 
-from app.experts.deepseek_expert import DeepseekExpert
-from app.experts.codegemma_expert import CodegemmaExpert
-from app.experts.llava_expert import LlavaExpert
 from app.knowledge.loader import search_knowledge
-
-# Define the base directory
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
-# Load configuration from YAML
-
-
-def load_config() -> dict:
-    config_path = BASE_DIR / "config.yaml"
-    if not config_path.exists():
-        raise FileNotFoundError(f"Missing config file: {config_path}")
-    return yaml.safe_load(config_path.read_text(encoding="utf-8"))
-
-
-# Load configuration
-config = load_config()
-
-# Extract settings from the configuration
-OLLAMA_API_URL = config['ollama']['api_url']
-DEFAULT_MODEL = config['ollama']['default_model']
-DOCS_PATH = Path(config['vectorstore']['docs_path'])
-VECTORSTORE_PATH = Path(config['vectorstore']['store_path'])
-
-__all__ = ["route_query", "load_config", OLLAMA_API_URL, DEFAULT_MODEL, "DOCS_PATH", "VECTORSTORE_PATH"]
-
-# Initialize experts
-deepseek = DeepseekExpert()
-codegemma = CodegemmaExpert()
-llava = LlavaExpert()
 
 
 def route_query(prompt: str, input_type: str = "text") -> str:
     """
-    Route the query to the appropriate expert based on the input type and content.
+    مسیر‌یابی پرسش به هر Expert
+    واردسازی Lazy (درون تابع) برای جلوگیری از circular import
     """
-    try:
-        # Retrieve relevant documents from the knowledge base
-        docs = search_knowledge(prompt, k=5)
-        if not docs:
-            return "[ERROR] No relevant documents found."
+    # مثال: اگر نیاز به Expert ترجمه بود
+    if input_type == "translate":
+        from app.experts.translator import TranslatorExpert
+        expert = TranslatorExpert()
+        return expert.translate_input(prompt)
 
-        # Combine documents into a single context
-        context = "\n---\n".join(docs)
+    # بارگذاری دانش
+    docs = search_knowledge(prompt, k=5)  # از ماژول مستقل loader
+    context = "\n---\n".join(docs or [])
 
-        # Route based on input type
-        if input_type == "image":
-            return llava.run(prompt, context)
+    # تصمیم‌گیری براساس کلیدواژه
+    if any(kw in prompt.lower() for kw in ["code", "function", "algorithm"]):
+        from app.experts.codegemma_expert import CodegemmaExpert
+        return CodegemmaExpert().run(prompt, context)
 
-        # Route based on keywords in the prompt
-        if any(keyword in prompt.lower() for keyword in ["code", "algorithm", "function"]):
-            return codegemma.run(prompt, context)
+    if input_type == "image":
+        from app.experts.llava_expert import LlavaExpert
+        return LlavaExpert().run(prompt, context)
 
-        # Default to DeepseekExpert for text-based queries
-        return deepseek.run(prompt, context)
-
-    except Exception as e:
-        print(f"Routing error: {e}")
-        return f"[ERROR] {str(e)}"
+    # پیش‌فرض Deepseek
+    from app.experts.deepseek_expert import DeepseekExpert
+    return DeepseekExpert().run(prompt, context)
