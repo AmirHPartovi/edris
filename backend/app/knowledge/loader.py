@@ -10,8 +10,8 @@ import fitz                             # PyMuPDF for PDF text & images
 # OCR for scanned PDFs :contentReference[oaicite:0]{index=0}
 import pytesseract
 # table extraction from PDFs :contentReference[oaicite:1]{index=1}
-import camelot
-import docx                            # python-docx for .docx text & tables
+# import camelot
+import python_docx as docx                     # python-docx for .docx text & tables
 from langchain.text_splitter import RecursiveCharacterTextSplitter  # chunking
 # FAISS vectorstore
 from langchain_community.vectorstores import FAISS

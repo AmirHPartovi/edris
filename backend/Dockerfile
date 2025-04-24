@@ -2,8 +2,11 @@
 # Backend/Dockerfile  (روش 2.2: تنظیم PYTHONPATH)
 # --------------------------------------------------
 
-# 1) پایه: Python 3.9 slim
-FROM python:3.9-slim
+# 1) پایه: Python 3.11 slim
+FROM python:3.11-slim
+
+# Update and upgrade system packages
+RUN apt-get update && apt-get upgrade -y && apt-get clean
 
 # 2) جلوگیری از buffering لاگ‌ها
 ENV PYTHONUNBUFFERED=1

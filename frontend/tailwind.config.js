@@ -5,6 +5,7 @@ module.exports = {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
     // Add any other paths where you use Tailwind classes
+    './src/**/*.{html,js}', // Ensure this matches your file structure
   ],
   darkMode: 'class', // This enables dark mode based on the 'dark' class
   theme: {
@@ -30,53 +31,57 @@ module.exports = {
         // For example, for your themeColors object in React
         indigo: {
           DEFAULT: '#6366f1',
-          light: '#eef2ff', // indigo-50
-          dark: '#4f46e5', // indigo-600
-          darker: '#4338ca', // indigo-700
-          text: '#4f46e5', // indigo-600
-          darkText: '#a5b4fc', // indigo-400
+          light: '#e0e7ff',
+          dark: '#4f46e5',
+          darker: '#4338ca',
+          text: '#4f46e5',
+          darkText: '#e0e7ff',
         },
-         emerald: {
+        emerald: {
           DEFAULT: '#10b981',
-          light: '#ecfdf5', // emerald-50
-          dark: '#059669', // emerald-600
-          darker: '#047857', // emerald-700
-          text: '#059669', // emerald-600
-          darkText: '#6ee7b7', // emerald-400
+          light: '#d1fae5',
+          dark: '#059669',
+          darker: '#047857',
+          text: '#059669',
+          darkText: '#d1fae5',
         },
         rose: {
           DEFAULT: '#f43f5e',
-          light: '#fff1f2', // rose-50
-          dark: '#e11d48', // rose-600
-          darker: '#be123c', // rose-700
-          text: '#e11d48', // rose-600
-          darkText: '#fda4af', // rose-400
+          light: '#ffe4e6',
+          dark: '#e11d48',
+          darker: '#be123c',
+          text: '#e11d48',
+          darkText: '#ffe4e6',
         },
         amber: {
           DEFAULT: '#f59e0b',
-          light: '#fffbeb', // amber-50
-          dark: '#d97706', // amber-600
-          darker: '#b45309', // amber-700
-          text: '#d97706', // amber-600
-          darkText: '#fcd34d', // amber-400
+          light: '#fef3c7',
+          dark: '#d97706',
+          darker: '#b45309',
+          text: '#d97706',
+          darkText: '#fef3c7',
         },
         blue: {
           DEFAULT: '#3b82f6',
-          light: '#eff6ff', // blue-50
-          dark: '#2563eb', // blue-600
-          darker: '#1d4ed8', // blue-700
-          text: '#2563eb', // blue-600
-          darkText: '#93c5fd', // blue-400
+          light: '#dbeafe',
+          dark: '#2563eb',
+          darker: '#1d4ed8',
+          text: '#2563eb',
+          darkText: '#dbeafe',
         },
+        'light-background': '#f8f9fa', // Replace with your desired color
+        'dark-background': '#343a40', // Add dark-background if needed
+        'light-text': '#212529',
+        'dark-text': '#f8f9fa',
       },
       boxShadow: {
         // Neomorphic shadows
-        'neumorphic-outset': '7px 7px 15px var(--tw-shadow-color-dark), -7px -7px 15px var(--tw-shadow-color-light)',
-        'neumorphic-outset-hover': '4px 4px 10px var(--tw-shadow-color-dark), -4px -4px 10px var(--tw-shadow-color-light)',
-        'neumorphic-inset': 'inset 5px 5px 10px var(--tw-shadow-color-dark), inset -5px -5px 10px var(--tw-shadow-color-light)',
+        'neumorphic-outset': '5px 5px 10px #bebebe, -5px -5px 10px #ffffff',
+        'neumorphic-outset-hover': '7px 7px 14px #bebebe, -7px -7px 14px #ffffff',
+        'neumorphic-inset': 'inset 5px 5px 10px #bebebe, inset -5px -5px 10px #ffffff',
         'neumorphic-inset-active': 'inset 3px 3px 7px var(--tw-shadow-color-dark), inset -3px -3px 7px var(--tw-shadow-color-light)',
         // Island shadow for the input area
-        'island': '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+        'island': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
       },
       // Define CSS variables for shadow colors, these will be set in your CSS file
       colors: {

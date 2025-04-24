@@ -1,7 +1,11 @@
-/* Define CSS variables for shadow colors */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Vazir&display=swap');
+
+/* Define CSS variables for shadow colors */
+
 :root {
     --shadow-light: rgba(255, 255, 255, 0.7);
     /* Light shadow for light mode */
@@ -18,17 +22,14 @@
 
 /* Apply base styles using Tailwind color variables from config */
 body {
-    @apply bg-light-background text-light-text transition-colors duration-500 ease-in-out;
+    background-color: var(--light-background);
+    color: var(--light-text);
+    transition: colors 500ms ease-in-out;
 }
 
 .dark body {
-    @apply bg-dark-background text-dark-text;
+    background-color: var(--dark-background);
+    color: var(--dark-text);
 }
 
 /* Add any other global styles here */
-@import url('https://fonts.googleapis.com/css2?family=Vazir&display=swap');
-
-
-body {
-    font-family: 'Vazir', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-}

@@ -16,4 +16,6 @@ pymupdf>=1.23.0
 pytesseract>=0.3.10
 matplotlib>=3.7.1
 jsonschema>=4.18.0
-camelot>=0.2.0
+python-docx>=0.8.11
+# camelot>=0.2.0
+# jinja2>=3.0.0

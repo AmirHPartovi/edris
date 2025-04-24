@@ -4,7 +4,7 @@
   "proxy": "http://localhost:8000",
   "scripts": {
     "dev": "vite",
-    "build:tailwind": "tailwindcss -i ./src/input.css -o ./dist/output.css --minify",
+    "build:tailwind": "tailwindcss -i ./src/index.css -o ./dist/index.css --minify",
     "build": "npm run build:tailwind && vite build"
   },
   "dependencies": {
