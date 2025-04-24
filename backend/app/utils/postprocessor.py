@@ -1,5 +1,5 @@
 import re
-from utils.formatter import format_table, to_latex, to_mermaid
+from app.utils.formatter import format_table, to_latex, to_mermaid
 
 
 def post_process(text: str, original_prompt: str) -> str:

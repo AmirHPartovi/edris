@@ -1,5 +1,5 @@
 import requests
-from utils.router import OLLAMA_API_URL, EXPERTS_CONFIG
+from app.utils.router import OLLAMA_API_URL, EXPERTS_CONFIG
 
 
 class CodegemmaExpert:

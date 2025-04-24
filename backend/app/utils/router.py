@@ -3,10 +3,10 @@ from pathlib import Path
 from typing import Optional
 import yaml
 
-from experts.deepseek_expert import DeepseekExpert
-from experts.codegemma_expert import CodegemmaExpert
-from experts.llava_expert import LlavaExpert
-from knowledge.loader import search_knowledge
+from app.experts.deepseek_expert import DeepseekExpert
+from app.experts.codegemma_expert import CodegemmaExpert
+from app.experts.llava_expert import LlavaExpert
+from app.knowledge.loader import search_knowledge
 
 # Define the base directory
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -29,6 +29,8 @@ OLLAMA_API_URL = config['ollama']['api_url']
 DEFAULT_MODEL = config['ollama']['default_model']
 DOCS_PATH = Path(config['vectorstore']['docs_path'])
 VECTORSTORE_PATH = Path(config['vectorstore']['store_path'])
+
+__all__ = ["route_query", "load_config", OLLAMA_API_URL, DEFAULT_MODEL, "DOCS_PATH", "VECTORSTORE_PATH"]
 
 # Initialize experts
 deepseek = DeepseekExpert()

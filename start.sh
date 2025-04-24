@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# بالا بردن سرویس‌ها با Docker Compose
-# مطمئن باش docker و docker-compose روی سیستم نصب هستند
-docker-compose up --build
+# اطمینان از در دسترس بودن Docker
+command -v docker >/dev/null 2>&1 || { echo >&2 "Docker نصب نیست"; exit 1; }
+
+# بیلد و بالا آوردن سرویس‌ها
+docker compose up --build -d

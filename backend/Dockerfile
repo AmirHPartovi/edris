@@ -1,37 +1,41 @@
-# پایه: پایتون 3.9
+# --------------------------------------------------
+# Backend/Dockerfile  (روش 2.2: تنظیم PYTHONPATH)
+# --------------------------------------------------
+
+# 1) پایه: Python 3.9 slim
 FROM python:3.9-slim
 
-# تنظیم متغیر محیطی برای جلوگیری از buffer stdout/stderr
-ENV PYTHONUNBUFFERED=1 \
-    POETRY_VIRTUALENVS_CREATE=false
+# 2) جلوگیری از buffering لاگ‌ها
+ENV PYTHONUNBUFFERED=1
 
-# ایجاد پوشه‌ی کاری
+# 3) اضافه کردن مسیر کد به PYTHONPATH
+#    این باعث می‌شود که پوشه /app/app
+#    در sys.path قرار بگیرد و import experts.* کار کند.
+# ENV PYTHONPATH="/app/app"
+
+# 4) پوشه کاری
 WORKDIR /app
 
-# نصب وابستگی‌های سیستمی
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    curl \
-    netcat \
-    && rm -rf /var/lib/apt/lists/*
+# 5) نصب بسته‌های سیستمی
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      build-essential \
+      curl \
+      netcat-openbsd \
+ && rm -rf /var/lib/apt/lists/*
 
-# کپی فایل‌های پروژه
-COPY backend/pyproject.toml backend/poetry.lock /app/
-# (یا اگر از requirements.txt استفاده می‌کنی)
-# COPY backend/requirements.txt /app/
-
-# نصب وابستگی‌ها
+# 6) نصب وابستگی‌های Python
+COPY backend/app/requirements.txt /app/requirements.txt
 RUN pip install --upgrade pip \
-    && pip install poetry \
-    && poetry install --no-dev --no-interaction --no-ansi
+ && pip install --no-cache-dir -r /app/requirements.txt
 
-# کپی بقیه‌ی کد
+# 7) کپی کد و کانفیگ
 COPY backend/app /app/app
 COPY config.yaml /app/config.yaml
 COPY backend/.env /app/.env
 
-# اکسپورت پورت
+# 8) پورت
 EXPOSE 8000
 
-# فرمان اجرا
+# 9) فرمان اجرا
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

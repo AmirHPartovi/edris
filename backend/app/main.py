@@ -8,9 +8,9 @@ from dotenv import load_dotenv
 import os
 import yaml
 
-from experts.translator import TranslatorExpert
-from utils.router import route_query
-from knowledge.loader import build_vectorstore, search_knowledge
+from app.experts.translator import TranslatorExpert
+from app.utils.router import route_query
+from app.knowledge.loader import build_vectorstore, search_knowledge
 
 # Load environment variables
 BASE_DIR = Path(__file__).parent.parent.parent
@@ -33,10 +33,31 @@ app.add_middleware(
     allow_credentials=True,
 )
 
-# Initialize TranslatorExpert
-translator = TranslatorExpert()
+
+def get_expert(name: str):
+    """Dynamically load and return the requested expert."""
+    if name == "translator":
+        from app.experts.translator import TranslatorExpert
+        return TranslatorExpert()
+    elif name == "deepseek":
+        from app.experts.deepseek_expert import DeepseekExpert
+        return DeepseekExpert()
+    elif name == "codegemma":
+        from app.experts.codegemma_expert import CodegemmaExpert
+        return CodegemmaExpert()
+    elif name == "llava":
+        from app.experts.llava_expert import LlavaExpert
+        return LlavaExpert()
+    else:
+        raise ValueError(f"Unknown expert: {name}")
+
+
+# Initialize TranslatorExpert lazily
+translator = get_expert("translator")
 
 # Request model for /query endpoint
+
+
 class ChatParams(BaseModel):
     prompt: str
     type: str = "text"
@@ -50,10 +71,13 @@ class ChatParams(BaseModel):
     stream: bool = False
 
 # Query endpoint
+
+
 @app.post("/query")
 async def query_agent(params: ChatParams):
     try:
         # Step 1: Translate input if Persian
+        translator = get_expert("translator")
         eng = translator.translate_input(params.prompt)
 
         # Step 2: Retrieve context
@@ -63,10 +87,12 @@ async def query_agent(params: ChatParams):
         context = "\n---\n".join(docs)
 
         # Step 3: Route to expert with model params
-        raw = route_query(prompt=eng, input_type=params.type)
+        # Dynamically get the expert
+        expert = get_expert(params.model.split("-")[0])
+        raw = expert.run(prompt=eng, context=context)
 
         # Step 4: Post-process and translate back
-        from utils.postprocessor import post_process
+        from app.utils.postprocessor import post_process
         processed = post_process(raw, params.prompt)
         final = translator.translate_output(processed, params.prompt)
 
@@ -77,6 +103,8 @@ async def query_agent(params: ChatParams):
         )
 
 # Knowledge upload endpoint
+
+
 @app.post("/knowledge/upload")
 async def upload_knowledge(
     files: list[UploadFile] = File(...), background_tasks: BackgroundTasks = None
@@ -93,7 +121,9 @@ async def upload_knowledge(
         # Rebuild vectorstore in the background
         def rebuild():
             try:
-                build_vectorstore(source_dir=upload_dir)
+                # Example: Use DeepseekExpert for rebuilding
+                loader = get_expert("deepseek")
+                app.loader.build_vectorstore(source_dir=upload_dir)
             except Exception as e:
                 print(f"Error rebuilding vectorstore: {e}")
 
@@ -105,11 +135,15 @@ async def upload_knowledge(
         )
 
 # Health check endpoint
+
+
 @app.get("/health", tags=["Health"])
 async def health():
     return {"status": "ok"}
 
 # Global exception handler
+
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     return JSONResponse(

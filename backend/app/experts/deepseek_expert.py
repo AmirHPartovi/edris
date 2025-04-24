@@ -1,9 +1,9 @@
 import requests
-from utils.router import OLLAMA_API_URL, EXPERTS_CONFIG
+from app.utils.router import OLLAMA_API_URL, EXPERTS_CONFIG
 
 
-class LlavaExpert:
-    MODEL = EXPERTS_CONFIG['llava']['model']
+class DeepseekExpert:
+    MODEL = EXPERTS_CONFIG['deepseek']['model']
     API = OLLAMA_API_URL
 
     def run(self, prompt: str, context: str = "") -> str:
