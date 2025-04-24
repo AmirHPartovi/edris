@@ -24,5 +24,7 @@ backend:
 
 # === مسیرهای Knowledge Base ===
 vectorstore:
+  # مسیر دایرکتوری اسناد (Docs) برای ساخت VectorStore
   docs_path: ./backend/app/knowledge/docs
+  # مسیر نگهداری VectorStore
   store_path: ./backend/app/knowledge/vectorstore

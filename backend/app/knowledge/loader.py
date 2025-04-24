@@ -5,7 +5,7 @@ from typing import List, Optional
 from langchain_community.vectorstores import FAISS
 from langchain.docstore.document import Document
 from app.utils.embedder import get_embedding
-from app.utils.router import DOCS_PATH, VECTORSTORE_PATH
+from app.config import DOCS_PATH, VECTORSTORE_PATH
 
 
 def load_text(fp: Path) -> str:
@@ -18,7 +18,7 @@ def load_text(fp: Path) -> str:
 
 
 def build_vectorstore():
-    """Build the vectorstore from documents."""
+    """Build the vector store from documents."""
     try:
         # Ensure directories exist
         DOCS_PATH.mkdir(parents=True, exist_ok=True)
@@ -26,18 +26,18 @@ def build_vectorstore():
 
         # List all markdown and text files
         files = list(DOCS_PATH.glob("*.md")) + list(DOCS_PATH.glob("*.txt"))
+        if not files:
+            print(f"No documents found in {DOCS_PATH}")
+            return
 
-        # Process files in batches
-        batch_size = 10
-        for i in range(0, len(files), batch_size):
-            batch = files[i: i + batch_size]
-            texts = [load_text(fp) for fp in batch]
-            print(
-                f"Processing batch {i // batch_size + 1}: {[fp.name for fp in batch]}")
-
-        print("Vectorstore build completed.")
+        # Process documents
+        embedder = OllamaEmbeddings()
+        documents = [Document(page_content=load_text(fp)) for fp in files]
+        db = FAISS.from_documents(documents, embedder)
+        db.save_local(str(VECTORSTORE_PATH))
+        print("Vector store build completed.")
     except Exception as e:
-        print(f"Error building vectorstore: {e}")
+        print(f"Error building vector store: {e}")
 
 
 class OllamaEmbeddings:
@@ -81,45 +81,15 @@ def search_knowledge(query: str, k: int = 5) -> Optional[List[str]]:
         return None
 
 
-def extract_algorithms(context: str) -> List[str]:
-    """Extract algorithm names from the context."""
-    return re.findall(r"Algorithm:\s*(\w+)", context)
 
+def extract_algorithms(text: str) -> list[str]:
 
-def build_vectorstore_from_source(source_dir: str = "knowledge/docs"):
-    """Build the vectorstore from a specified source directory."""
-    try:
-        embeddings = OllamaEmbeddings()
-        documents = []
-        source_path = Path(source_dir)
-
-        if not source_path.exists():
-            print(f"Directory not found: {source_dir}")
-            return None
-
-        for file_path in source_path.glob('*'):
-            try:
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    text = f.read()
-                    documents.append(Document(page_content=text))
-            except Exception as e:
-                print(f"Error reading file {file_path}: {e}")
-                continue
-
-        if not documents:
-            print("No documents were successfully loaded.")
-            return None
-
-        VECTORSTORE_PATH.mkdir(parents=True, exist_ok=True)
-        db = FAISS.from_documents(documents, embeddings)
-        db.save_local(str(VECTORSTORE_PATH))
-        print(
-            f"Successfully built vectorstore with {len(documents)} documents.")
-        return db
-    except Exception as e:
-        print(f"Error building vectorstore: {e}")
-        raise
-
+    """
+    Placeholder for extracting algorithm names or steps from text.
+    """
+    # TODO: implement actual algorithm extraction logic
+    print(f"Extracting algorithms from text of length {len(text)}")
+    return []
 
 if __name__ == "__main__":
     build_vectorstore()

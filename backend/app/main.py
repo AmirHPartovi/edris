@@ -3,7 +3,7 @@ from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-import pathlib
+from pathlib import Path
 import os
 import yaml
 from dotenv import load_dotenv
@@ -12,7 +12,7 @@ from app.utils.router import route_query
 from app.config import FRONTEND_ORIGINS
 
 # Load environment variables
-BASE_DIR = Path(__file__).parent.parent.parent
+BASE_DIR = Path(__file__).parent.parent
 load_dotenv(dotenv_path=BASE_DIR / "backend" / ".env")
 
 # Load configuration from YAML
@@ -72,7 +72,7 @@ class ChatParams(BaseModel):
 # Query endpoint
 
 
-@app.post("/query")
+@app.post("/api/query")
 async def query_agent(params: ChatParams):
     try:
         # Step 1: Translate input if Persian
@@ -104,7 +104,7 @@ async def query_agent(params: ChatParams):
 # Knowledge upload endpoint
 
 
-@app.post("/knowledge/upload")
+@app.post("/api/knowledge/upload")
 async def upload_knowledge(
     files: list[UploadFile] = File(...), background_tasks: BackgroundTasks = None
 ):
@@ -141,6 +141,14 @@ async def health():
     return {"status": "ok"}
 
 # Global exception handler
+
+
+@app.get("/", tags=["Root"])
+async def root():
+    """
+    Root path to prevent 404 on GET /
+    """
+    return {"message": "Welcome to Edris API"}
 
 
 @app.exception_handler(Exception)

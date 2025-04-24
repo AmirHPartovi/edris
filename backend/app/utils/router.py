@@ -1,9 +1,30 @@
 # utils/router.py
 
-from app.config import EXPERTS_CONFIG, DOCS_PATH, STORE_PATH
+from app.config import DOCS_PATH, VECTORSTORE_PATH
 from typing import Optional
 
 from app.knowledge.loader import search_knowledge
+import yaml
+from pathlib import Path
+
+# مسیر پایه پروژه
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+
+def load_config() -> dict:
+    cfg = BASE_DIR / "config.yaml"
+    if not cfg.exists():
+        raise FileNotFoundError(f"Missing config file: {cfg}")
+    return yaml.safe_load(cfg.read_text(encoding="utf-8"))
+
+
+# بارگذاری تنظیمات
+config = load_config()
+
+# استخراج مسیرها از config
+DOCS_PATH = Path(config['vectorstore']['docs_path'])
+VECTORSTORE_PATH = Path(config['vectorstore']['store_path'])
+# سایر تنظیمات...
 
 
 def route_query(prompt: str, input_type: str = "text") -> str:
