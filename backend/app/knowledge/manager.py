@@ -1,10 +1,10 @@
 import json
 from pathlib import Path
 from typing import Dict, List
-from .loader import load_file, build_vectorstore, extract_algorithms
-from .loader import build_vectorstore as _build_vs, build_vectorstore as _build_algos
-from .utils.config import SPACES_DIR, DOCS_PATH, VECTORSTORE_PATH, ALGOS_PATH, MEDIA_DIR
-from .utils.embedder import get_embedding
+from knowledge.loader import load_file, build_vectorstore, extract_algorithms
+from knowledge.loader import build_vectorstore as _build_vs, build_vectorstore as _build_algos
+from utils.config import SPACES_DIR, DOCS_PATH, VECTORSTORE_PATH, ALGOS_PATH, MEDIA_DIR
+from utils.embedder import get_embedding
 from langchain.docstore.document import Document
 from langchain_community.vectorstores import FAISS
 

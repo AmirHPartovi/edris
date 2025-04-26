@@ -8,7 +8,7 @@ from utils.config import (
     BACKEND_HOST, BACKEND_PORT, FRONTEND_ORIGINS,
     DOCS_PATH, SPACES_DIR
 )
-from .knowledge.manager import (
+from knowledge.manager import (
     list_spaces, create_space, delete_space,
     build_space_vs, search_space, search_space_algos
 )

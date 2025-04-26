@@ -1,8 +1,8 @@
 import re
-from .utils.formatter import format_table, to_latex, to_mermaid , to_base64_image_tag
-from .utils.formatter import chart_to_base64 ,highlight_code_blocks
-from .utils.formatter import replace_footnotes, generate_toc
-from .utils.formatter import replace_admonitions ,extract_and_validate_json
+from utils.formatter import format_table, to_latex, to_mermaid , to_base64_image_tag
+from utils.formatter import chart_to_base64 ,highlight_code_blocks
+from utils.formatter import replace_footnotes, generate_toc
+from utils.formatter import replace_admonitions ,extract_and_validate_json
 
 
 def post_process(text: str, original_prompt: str) -> str:
