@@ -35,6 +35,7 @@ RUN pip install --upgrade pip \
 # 7) کپی کد و کانفیگ
 COPY backend/app /app
 COPY config.yaml /app/config.yaml
+COPY backend/streamlit_ui.py /app/streamlit_ui.py
 ENV PYTHONPATH=/app
 
 # 8) پورت
@@ -42,3 +43,4 @@ EXPOSE 8000
 
 # 9) فرمان اجرا
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+

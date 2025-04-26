@@ -85,4 +85,12 @@ def health():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host=BACKEND_HOST, port=BACKEND_PORT)
+    # st.run(
+    #     streamlit_ui.main,
+    #     server_address=BACKEND_HOST,
+    #     server_port=BACKEND_PORT,
+    #     server_headless=True,
+    #     server_enableCORS=False,
+    #     server_enableXsrfProtection=False,
+    # )
 
