@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from typing import List
-
+from utils.router import ChatRequest, ChatResponse , chat_endpoint
 
 from utils.config import (
     BACKEND_HOST, BACKEND_PORT, FRONTEND_ORIGINS,
@@ -81,6 +81,9 @@ def api_search_algorithms(space: str, q: str, k: int = 5):
 def health():
     return {"status": "ok"}
 
+@app.post("/chat", response_model=ChatResponse)
+def chat_endpoint(request: ChatRequest):
+    return response
 # Note: Run Uvicorn with config settings
 if __name__ == "__main__":
     import uvicorn

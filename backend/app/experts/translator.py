@@ -8,19 +8,19 @@ P2E_MODEL = "Persian-to-English-Translation-mT5-V1-Q8_0-GGUF"
 E2P_MODEL = "English-to-Persian-Translation-mT5-V1-Q8_0-GGUF"
 
 
-def translate_input(text: str) -> str:
+async def translate_input(text: str) -> str:
     # heuristic: any Persian character?
     if any("\u0600" <= ch <= "\u06FF" for ch in text):  #
-        resp = requests.post(
+        await resp = requests.post(
             OLLAMA_API, json={"model": P2E_MODEL, "prompt": text})
         return resp.json().get("response", "")
     return text
 
 
-def translate_output(text: str, original: str) -> str:
+async def translate_output(text: str, original: str) -> str:
     if any("\u0600" <= ch <= "\u06FF" for ch in original):  #
         codes = re.findall(r"```[\s\S]*?```", text)
-        resp = requests.post(
+        await resp = requests.post(
             OLLAMA_API, json={"model": E2P_MODEL, "prompt": text})
         out = resp.json().get("response", "")
         # reintegrate code blocks

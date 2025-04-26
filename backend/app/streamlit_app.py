@@ -1,104 +1,251 @@
 import streamlit as st
 import requests
-import time
+import json
+import os
+from datetime import datetime
 
-# Config
-def get_api_url():
-    return st.secrets.get("API_URL", "http://localhost:8000")
+# Configure page settings
+st.set_page_config(page_title="Backend API Tester & Chat Pipeline", layout="wide")
 
-# Utility
-def fetch_spaces():
-    resp = requests.get(f"{get_api_url()}/spaces")
-    return resp.json().get("spaces", [])
+# Main title
+st.title("API Endpoint Tester & Chat Pipeline")
 
-# Main App
-def main():
-    st.set_page_config(page_title="Edris RAG UI", layout="wide")
-    st.title("📚 Edris RAG System")
+# Define the base URL for your backend
+BASE_URL = st.sidebar.text_input("Base URL", value="http://localhost:8000")
 
-    # Sidebar: Space Management
-    st.sidebar.header("Spaces")
-    spaces = fetch_spaces()
-    space_names = [s["name"] for s in spaces]
-    selected = st.sidebar.selectbox("Select space", [None] + space_names)
+# Tabs for different functionalities
+tab1, tab2, tab3 = st.tabs(["API Endpoint Testing", "Document Management", "Chat Pipeline"])
 
-    new_space = st.sidebar.text_input("New space name")
-    if st.sidebar.button("Create Space"):
-        if new_space:
-            with st.spinner("Creating space..."):
-                r = requests.post(f"{get_api_url()}/spaces/{new_space}", json={})
-            if r.ok:
-                st.sidebar.success(f"Space '{new_space}' created.")
+# Tab 1: API Endpoint Testing
+with tab1:
+    st.header("Test Backend Endpoints")
+    
+    # Endpoints section
+    endpoint_options = [
+        "Select an endpoint",
+        "GET /health",
+        "POST /process",
+        "GET /documents",
+        "GET /documents/{doc_id}",
+        "POST /chat",
+        # Add more endpoints as needed
+    ]
+    
+    selected_endpoint = st.selectbox("Choose an endpoint", endpoint_options)
+    
+    if selected_endpoint != "Select an endpoint":
+        st.subheader(f"Testing: {selected_endpoint}")
+        
+        # Parse the endpoint
+        method, path = selected_endpoint.split(" ")
+        
+        # Handle path parameters
+        if "{" in path:
+            param_name = path[path.find("{")+1:path.find("}")]
+            param_value = st.text_input(f"Enter {param_name}")
+            path = path.replace(f"{{{param_name}}}", param_value)
+        
+        # Request body (for POST/PUT methods)
+        if method in ["POST", "PUT"]:
+            st.subheader("Request Body")
+            if path == "/process":
+                file_path = st.text_input("File Path (full path to the document)", value="")
+                request_body = json.dumps({"file_path": file_path})
             else:
-                st.sidebar.error(f"Error: {r.text}")
-            time.sleep(1)
-            spaces = fetch_spaces()
-            space_names = [s["name"] for s in spaces]
+                request_body = st.text_area("JSON Body", height=200)
+            
+            try:
+                if request_body:
+                    json_body = json.loads(request_body)
+                else:
+                    json_body = {}
+            except:
+                st.error("Invalid JSON format")
+                json_body = {}
+            
+        # Execute the request
+        if st.button("Send Request"):
+            try:
+                url = f"{BASE_URL}{path}"
+                
+                st.info(f"Sending {method} request to {url}")
+                
+                if method == "GET":
+                    response = requests.get(url)
+                elif method == "POST":
+                    response = requests.post(url, json=json_body)
+                elif method == "PUT":
+                    response = requests.put(url, json=json_body)
+                elif method == "DELETE":
+                    response = requests.delete(url)
+                    
+                # Display response
+                st.subheader("Response")
+                st.write(f"Status Code: {response.status_code}")
+                
+                try:
+                    resp_json = response.json()
+                    st.json(resp_json)
+                except:
+                    st.text(response.text)
+                    
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
 
-    if selected:
-        if st.sidebar.button("Delete Space"):
-            with st.spinner(f"Deleting space {selected}..."):
-                r = requests.delete(f"{get_api_url()}/spaces/{selected}")
-            if r.ok:
-                st.sidebar.success(f"Space '{selected}' deleted.")
+# Tab 2: Document Management
+with tab2:
+    st.header("Document Management")
+    
+    # Document processing section
+    st.subheader("Process Document")
+    file_path = st.text_input("Enter absolute path to document file")
+    
+    if st.button("Process Document"):
+        if file_path:
+            try:
+                response = requests.post(
+                    f"{BASE_URL}/process",
+                    json={"file_path": file_path}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    st.success(f"Document processed successfully! Document ID: {result.get('document_id')}")
+                else:
+                    st.error(f"Error: {response.status_code}")
+                    st.write(response.text)
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
+        else:
+            st.warning("Please enter a file path")
+    
+    # Document listing section
+    st.subheader("Document List")
+    if st.button("Refresh Documents"):
+        try:
+            response = requests.get(f"{BASE_URL}/documents")
+            if response.status_code == 200:
+                documents = response.json().get("documents", [])
+                if documents:
+                    # Create a table of documents
+                    for doc in documents:
+                        with st.expander(f"Document: {doc.get('title', 'Unknown')}"):
+                            st.write(f"ID: {doc.get('id')}")
+                            st.write(f"Path: {doc.get('source')}")
+                            st.write(f"Added: {doc.get('created_at')}")
+                            
+                            # Button to view document details
+                            if st.button(f"View Details", key=f"view_{doc.get('id')}"):
+                                doc_response = requests.get(f"{BASE_URL}/documents/{doc.get('id')}")
+                                if doc_response.status_code == 200:
+                                    doc_details = doc_response.json().get("document")
+                                    st.json(doc_details)
+                                else:
+                                    st.error(f"Failed to get document details: {doc_response.text}")
+                else:
+                    st.info("No documents found")
             else:
-                st.sidebar.error(f"Error: {r.text}")
-            time.sleep(1)
-            spaces = fetch_spaces()
-            selected = None
+                st.error(f"Failed to get documents: {response.text}")
+        except Exception as e:
+            st.error(f"Error: {str(e)}")
 
-    # Main Tabs
-    tab1, tab2, tab3 = st.tabs(["Upload & Build", "Search Knowledge", "Search Algorithms"])
+# Tab 3: Chat Pipeline
+with tab3:
+    st.header("Chat Pipeline")
+    
+    # Chat settings
+    st.sidebar.subheader("Chat Settings")
+    model_name = st.sidebar.text_input("Model Name", value="llama3")
+    st.sidebar.info("Type 'fullcomplete' in your message to get detailed algorithm explanations")
+    
+    # Initialize chat history
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = []
+    
+    # Display chat messages
+    for message in st.session_state.chat_messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+    
+    # Input for new message
+    user_input = st.chat_input("Message (can be in English or Persian)...")
+    
+    if user_input:
+        # Add user message to chat history
+        st.session_state.chat_messages.append({"role": "user", "content": user_input})
+        
+        # Display user message
+        with st.chat_message("user"):
+            st.markdown(user_input)
+        
+        # Call chat endpoint
+        with st.chat_message("assistant"):
+            with st.spinner("Processing your message..."):
+                try:
+                    # Prepare request with chat history
+                    messages = []
+                    for msg in st.session_state.chat_messages:
+                        messages.append({"role": msg["role"], "content": msg["content"]})
+                    
+                    # Make the request to your backend
+                    response = requests.post(
+                        f"{BASE_URL}/chat",
+                        json={
+                            "messages": messages,
+                            "model": model_name,
+                            "stream": False
+                        }
+                    )
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        assistant_response = result["response"]
+                        processing_time = result.get("processing_time", 0)
+                        
+                        # Display the response
+                        st.markdown(assistant_response)
+                        st.caption(f"Processing time: {processing_time:.2f} seconds")
+                        
+                        # Add assistant response to chat history
+                        st.session_state.chat_messages.append({
+                            "role": "assistant", 
+                            "content": assistant_response
+                        })
+                    else:
+                        st.error(f"Error: API returned status code {response.status_code}")
+                        st.write(response.text)
+                except Exception as e:
+                    st.error(f"Failed to communicate with the backend: {str(e)}")
+    
+    # Clear chat button
+    if st.button("Clear Chat"):
+        st.session_state.chat_messages = []
+        st.experimental_rerun()
 
-    if tab1:
-        tab1.header("Upload Documents & Build Vectorstore")
-        if not selected:
-            tab1.info("Select a space to upload.")
+# Sidebar - System status
+st.sidebar.header("System Status")
+if st.sidebar.button("Check Health"):
+    try:
+        response = requests.get(f"{BASE_URL}/health")
+        if response.status_code == 200:
+            health_data = response.json()
+            st.sidebar.success("✅ System Healthy")
+            st.sidebar.write(f"Vector Store: {health_data.get('vector_store')}")
+            st.sidebar.write(f"Last Check: {health_data.get('timestamp')}")
         else:
-            files = tab1.file_uploader("Choose documents", type=["md","txt","csv","pdf","docx","pptx","ppt"], accept_multiple_files=True)
-            if tab1.button("Upload & Build", key="upload_build") and files:
-                with st.spinner("Uploading files..."):
-                    multipart = [("files", (f.name, f, "application/octet-stream")) for f in files]
-                    r = requests.post(f"{get_api_url()}/knowledge/upload/{selected}", files=multipart)
-                if r.ok:
-                    tab1.success("Upload scheduled. Build in progress!")
-                else:
-                    tab1.error(f"Error: {r.text}")
+            st.sidebar.error("❌ System Unhealthy")
+            st.sidebar.write(response.text)
+    except Exception as e:
+        st.sidebar.error(f"❌ Connection Failed: {str(e)}")
 
-    if tab2:
-        tab2.header("Search Knowledge")
-        if not selected:
-            tab2.info("Select a space to search.")
-        else:
-            q = tab2.text_input("Enter query", key="search_q")
-            k = tab2.slider("Top K", 1, 20, 5, key="search_k")
-            if tab2.button("Search", key="search_button") and q:
-                with st.spinner("Searching..."):
-                    r = requests.get(f"{get_api_url()}/knowledge/search/{selected}", params={"q": q, "k": k})
-                if r.ok:
-                    res = r.json().get("results", [])
-                    for i, doc in enumerate(res, 1):
-                        tab2.subheader(f"Result {i}")
-                        tab2.write(doc)
-                else:
-                    tab2.error(f"Error: {r.text}")
+# Sidebar info
+st.sidebar.header("About")
+st.sidebar.info("""
+This application helps test your backend API endpoints and interact with your chat pipeline.
 
-    if tab3:
-        tab3.header("Search Algorithms")
-        if not selected:
-            tab3.info("Select a space to search algorithms.")
-        else:
-            q_algo = tab3.text_input("Algorithm query", key="algo_q")
-            k_algo = tab3.slider("Top K Algos", 1, 20, 5, key="algo_k")
-            if tab3.button("Search Algo", key="algo_button") and q_algo:
-                with st.spinner("Searching algorithms..."):
-                    r = requests.get(f"{get_api_url()}/algorithms/search/{selected}", params={"q": q_algo, "k": k_algo})
-                if r.ok:
-                    algos = r.json().get("algorithms", [])
-                    for algo in algos:
-                        tab3.success(algo)
-                else:
-                    tab3.error(f"Error: {r.text}")
-
-if __name__ == "__main__":
-    main()
+The chat pipeline supports:
+- Persian and English inputs
+- Special command 'fullcomplete' for detailed algorithm explanations
+- Automatic translation based on input language
+""")
+st.sidebar.write(f"Current time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
