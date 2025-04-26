@@ -1,4 +1,4 @@
-# config.yaml
+
 backend:
   host: 0.0.0.0
   port: 8000
@@ -9,6 +9,7 @@ backend:
 vectorstore:
   docs_path: ./backend/app/knowledge/docs
   store_path: ./backend/app/knowledge/vectorstore
+  algos_path: ./backend/app/knowledge/vectorstore/algos
 
 ollama:
   api_url: http://ollama:11434/api/generate
@@ -17,3 +18,23 @@ ollama:
 logging:
   level: INFO
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+paths:
+  spaces_dir: ./backend/app/knowledge/spaces
+  media_dir: ./backend/app/knowledge/docs/media
+
+packages:
+  - python-docx
+  - python-pptx
+  - Pillow
+  - pytesseract
+  - PyMuPDF
+  - langchain
+  - langchain-community
+  - PyYAML
+  - fastapi
+  - uvicorn
+  - requests
+  - beautifulsoup4
+  - pandas
+  - matplotlib

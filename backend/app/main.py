@@ -19,9 +19,14 @@ app.add_middleware(
     allow_origins=FRONTEND_ORIGINS,
     allow_methods=["*"], allow_headers=["*"], allow_credentials=True,
 )
+DOCS_PATH.mkdir(parents=True, exist_ok=True)
+VECTORSTORE_PATH.mkdir(parents=True, exist_ok=True)
+ALGOS_PATH.mkdir(parents=True, exist_ok=True)
+SPACES_DIR.mkdir(parents=True, exist_ok=True)
+MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 # Serve media files
-app.mount("/media", StaticFiles(directory=str(DOCS_PATH / "media")), name="media")
+app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 
 # --- Space Management Endpoints ---
 @app.get("/spaces")

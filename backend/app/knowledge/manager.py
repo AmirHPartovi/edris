@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Dict, List
 from app.loader import load_file, build_vectorstore, extract_algorithms
 from app.loader import build_vectorstore as _build_vs, build_vectorstore as _build_algos
-from app.utils.config import SPACES_DIR, VECTORSTORE_PATH
+from app.utils.config import SPACES_DIR, DOCS_PATH, VECTORSTORE_PATH, ALGOS_PATH, MEDIA_DIR
 from app.utils.embedder import get_embedding
 from langchain.docstore.document import Document
 from langchain_community.vectorstores import FAISS
@@ -41,7 +41,10 @@ def delete_space(name: str) -> None:
 # Build both docs and algos for a space
 def build_space_vs(name: str) -> None:
     docs_dir = SPACES_DIR / name / "docs"
+    media_dir = MEDIA_DIR
+    media_dir.mkdir(parents=True, exist_ok=True)
     _build_vs(str(docs_dir))
+    _build_algos(str(docs_dir))
 
 # Search within text docs
 def search_space(name: str, query: str, k: int = 5) -> List[str]:
