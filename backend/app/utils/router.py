@@ -1,8 +1,8 @@
 # backend/app/utils/router.py
-from app.experts.deepseek_expert import DeepseekExpert
-from app.experts.codegemma_expert import CodegemmaExpert
-from app.experts.llava_expert import LlavaExpert
-from app.knowledge.loader import search_knowledge
+from .experts.deepseek_expert import DeepseekExpert
+from .experts.codegemma_expert import CodegemmaExpert
+from .experts.llava_expert import LlavaExpert
+from .knowledge.loader import search_knowledge
 
 # threshold for context size fallback
 MAX_TOKENS = 2000

@@ -4,11 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from typing import List
 
-from app.utils.config import (
+from utils.config import (
     BACKEND_HOST, BACKEND_PORT, FRONTEND_ORIGINS,
     DOCS_PATH, SPACES_DIR
 )
-from app.knowledge.manager import (
+from .knowledge.manager import (
     list_spaces, create_space, delete_space,
     build_space_vs, search_space, search_space_algos
 )

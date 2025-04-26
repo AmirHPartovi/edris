@@ -10,8 +10,8 @@ from docx import Document as DocxDocument  # python-docx for .docx
 from pptx import Presentation  # python-pptx for .pptx slides
 from langchain.docstore.document import Document
 from langchain_community.vectorstores import FAISS
-from app.utils.embedder import get_embedding
-from app.utils.router import DOCS_PATH, VECTORSTORE_PATH, IMAGE_CACHE_PATH
+from .utils.embedder import get_embedding
+from .utils.router import DOCS_PATH, VECTORSTORE_PATH, IMAGE_CACHE_PATH
 from bs4 import BeautifulSoup
 import pandas as pd
 import matplotlib.pyplot as plt

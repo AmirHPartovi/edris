@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# اطمینان از در دسترس بودن Docker
 command -v docker >/dev/null 2>&1 || { echo >&2 "Docker نصب نیست"; exit 1; }
 
-# بیلد و بالا آوردن سرویس‌ها
+# پاکسازی و بیلد مجدد
+docker compose down --volumes
 docker compose up --build -d
+
+echo "Waiting for backend to be healthy..."
+sleep 5
+docker logs --tail 50 edris-backend

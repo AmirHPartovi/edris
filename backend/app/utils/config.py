@@ -2,7 +2,7 @@ import yaml
 from pathlib import Path
 
 # مسیر فایل پیکربندی در کانتینر
-_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config.yaml"
+_CONFIG_PATH = Path(__file__).resolve().parents[1] / "config.yaml"
 
 # بارگذاری کانفیگ
 def _load_config() -> dict:
