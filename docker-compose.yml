@@ -25,20 +25,20 @@ services:
       - ./config.yaml:/app/config.yaml:ro
     depends_on:
       - ollama
-  streamlit_ui:
-    build:
-      context: .         # <- Build context رو بذار ریشه پروژه (.)
-      dockerfile: backend/Dockerfile # <- مسیر Dockerfile رو مشخص کن
-    # ... بقیه تنظیمات streamlit_ui ...
-    volumes:
-      - ./backend:/app # این volume احتمالا هنوز لازمه
-    environment:
-      - BACKEND_URL=http://backend:8000
-    ports:
-      - "8501:8501"
-    command: ["streamlit", "run", "streamlit_ui.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
-    depends_on:
-      - backend
+  # streamlit_ui:
+  #   build:
+  #     context: .         # <- Build context رو بذار ریشه پروژه (.)
+  #     dockerfile: backend/Dockerfile # <- مسیر Dockerfile رو مشخص کن
+  #   # ... بقیه تنظیمات streamlit_ui ...
+  #   volumes:
+  #     - ./backend:/app # این volume احتمالا هنوز لازمه
+  #   environment:
+  #     - BACKEND_URL=http://backend:8000
+  #   ports:
+  #     - "8501:8501"
+  #   command: ["streamlit", "run", "streamlit_ui.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+  #   depends_on:
+  #     - backend
 
   frontend:
     build:

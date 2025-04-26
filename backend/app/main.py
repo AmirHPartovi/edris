@@ -33,7 +33,7 @@ app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
 
 
 @app.get("/")
-async def docs_redirect():
+async def streamlit():
     return RedirectResponse(url="/docs")
 
 # --- Space Management Endpoints ---
