@@ -2,6 +2,7 @@
 from fastapi import FastAPI, BackgroundTasks, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from typing import List
 
 
@@ -29,6 +30,11 @@ MEDIA_DIR.mkdir(parents=True, exist_ok=True)
 
 # Serve media files
 app.mount("/media", StaticFiles(directory=str(MEDIA_DIR)), name="media")
+
+
+@app.get("/")
+async def docs_redirect():
+    return RedirectResponse(url="/docs")
 
 # --- Space Management Endpoints ---
 @app.get("/spaces")
