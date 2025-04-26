@@ -18,8 +18,8 @@ from langchain.schema.document import Document
 
 # Import your existing modules
 sys.path.append(str(Path(__file__).parent.parent))
-from loader import load_document, process_document
-from config import VECTORSTORE_PATH, CHUNK_SIZE, CHUNK_OVERLAP
+from knowledge.loader import load_file, build_vectorstore
+from .config import VECTORSTORE_PATH
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -403,7 +403,7 @@ async def process_document_endpoint(file_path: str = Body(...)):
             raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
         
         # Use your loader module to load and process the document
-        doc = load_document(file_path)
+        doc = load_file(file_path)
         if not doc:
             raise HTTPException(status_code=400, detail="Failed to load document")
         
@@ -414,11 +414,11 @@ async def process_document_endpoint(file_path: str = Body(...)):
         # Process document with your existing function or use a custom implementation
         try:
             # Use existing process_document function if it fits your needs
-            processed_id = process_document(doc, file_path, CHUNK_SIZE, CHUNK_OVERLAP, VECTORSTORE_PATH)
+            processed_id = build_vectorstore(doc, file_path,VECTORSTORE_PATH)
             doc_id = processed_id or doc_id  # Use returned ID if available
         except Exception as e:
             # If process_document doesn't work as expected, implement alternative
-            logger.error(f"Error using process_document: {str(e)}")
+            logger.error(f"Error using build_vectorstore: {str(e)}")
             # Implement manual processing if needed
             # This is a fallback if your process_document function has different parameters
             

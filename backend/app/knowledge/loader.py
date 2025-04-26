@@ -57,6 +57,11 @@ def load_csv_file(path: Path) -> str:
             rows.append(", ".join(row))
     return "\n".join(rows)
 
+def load_pdf_documents(path: Path) -> List[Document]:
+    """Load a PDF and return as a single Document"""
+    text = load_pdf_file(path)
+    return [Document(page_content=text, metadata={"source": str(path)})]
+
 def load_pdf_file(path: Path) -> str:
     text_chunks: List[str] = []
     pdf = fitz.open(str(path))
@@ -102,10 +107,7 @@ def load_file(path: Path) -> str:
         return load_pptx_file(path)
     raise ValueError(f"Unsupported file type: {ext}")
 
-def load_pdf_documents(path: Path) -> List[Document]:
-    """Load a PDF and return as a single Document"""
-    text = load_pdf_file(path)
-    return [Document(page_content=text, metadata={"source": str(path)})]
+
 
 def extract_media_from_html(html: str, source_path: Path):
     """
