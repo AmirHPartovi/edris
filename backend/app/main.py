@@ -1,6 +1,8 @@
 # backend/app/main.py
-from fastapi import FastAPI, UploadFile, File, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from app.knowledge.manager import build_vectorstore, search_space, list_spaces  
+
 from pydantic import BaseModel
 from app.experts.translator import translate_input, translate_output
 from app.utils.router import route_query
@@ -9,6 +11,8 @@ from app.utils.postprocessor import post_process
 import os
 from utils.router import DOCS_PATH
 import logging
+from fastapi.staticfiles import StaticFiles
+from app.knowledge.manager import search_knowledge, retrieve_with_media
 
 #logging
 logging.basicConfig(level=LOGGING_LEVEL, format=LOGGING_FORMAT)
@@ -23,7 +27,8 @@ app.add_middleware(
     allow_headers=["*"],
     allow_credentials=True,
 )
-
+app.mount("/media", StaticFiles(directory=str(DOCS_PATH / "media")), name="media")
+app.mount("/docs", StaticFiles(directory=str(DOCS_PATH / "docs")), name="docs")
 
 class ChatParams(BaseModel):
     prompt: str
@@ -72,25 +77,22 @@ async def query_agent(params: ChatParams):
     final = translate_output(processed, params.prompt)
     return {"response": final}
 
+@app.get("/query_with_media")
+def query_with_media(q: str, k: int = 5):
+    res = retrieve_with_media(q, k)
+    return res
 
-@app.post("/knowledge/upload")
-async def upload_knowledge(
-    background_tasks: BackgroundTasks,
-    files: list[UploadFile] = File(...)
-):
-    # استفاده مستقیم از DOCS_PATH
-    DOCS_PATH.mkdir(parents=True, exist_ok=True)
+@app.post("/knowledge/upload/{space}")
+async def upload_knowledge(background_tasks: BackgroundTasks , space: str, files: list[UploadFile] = File(...)):
+    # save to spaces/<space>/docs
+    # ... (similar to before) ...
+    background_tasks.add_task(build_vectorstore, space)
+    return {"status": "scheduled", "space": space}
 
-    for f in files:
-        out_path = DOCS_PATH / f.filename
-        with open(out_path, "wb") as out:
-            out.write(await f.read())
 
-    # فراخوانی تابع با پارامتر string مسیر
-    background_tasks.add_task(build_vectorstore, str(DOCS_PATH))
-    logger.info(f"Received {len(files)} files, scheduled vectorstore build.")
-    return {"status": "upload received", "files": [f.filename for f in files]}
-
+@app.get("/knowledge/search/{space}")
+def search(space: str, query: str, k: int = 5):
+    return {"results": search_space(space, query, k)}
 
 @app.get("/health")
 async def health(): return {"status": "ok"}
