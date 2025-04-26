@@ -1,16 +1,22 @@
 import json
-import os
 from pathlib import Path
 from typing import Dict, List
-from .loader import load_file, build_vectorstore as _build_vectorstore, search_knowledge as _search
+from app.loader import load_file, build_vectorstore, extract_algorithms
+from app.loader import build_vectorstore as _build_vs, build_vectorstore as _build_algos
+from app.utils.config import SPACES_DIR, VECTORSTORE_PATH
+from app.utils.embedder import get_embedding
+from langchain.docstore.document import Document
+from langchain_community.vectorstores import FAISS
 
 BASE = Path(__file__).resolve().parent
 SPACES_DIR = BASE / "spaces"
+
+
+
+# Spaces folder
 SPACES_DIR.mkdir(exist_ok=True)
 
-
 def list_spaces() -> List[Dict]:
-    """List all spaces with metadata."""
     spaces = []
     for space in SPACES_DIR.iterdir():
         if space.is_dir():
@@ -19,44 +25,34 @@ def list_spaces() -> List[Dict]:
             spaces.append({"name": space.name, **data})
     return spaces
 
-
 def create_space(name: str, settings: Dict) -> None:
-    """Create a new knowledge space."""
     space = SPACES_DIR / name
-    if space.exists():
-        raise FileExistsError(f"Space '{name}' already exists")
-    docs = space / "docs"
-    vs = space / "vectorstore"
-    docs.mkdir(parents=True)
-    vs.mkdir()
-    cfg = space / "config.json"
-    cfg.write_text(json.dumps({**settings, "enabled": settings.get("enabled", False)}))
-
+    if space.exists(): raise FileExistsError(f"Space '{name}' exists.")
+    (space / "docs").mkdir(parents=True)
+    (space / "vectorstore").mkdir()
+    (space / "config.json").write_text(json.dumps(settings))
 
 def delete_space(name: str) -> None:
-    """Remove a space entirely."""
     space = SPACES_DIR / name
-    if not space.exists():
-        raise FileNotFoundError(f"Space '{name}' not found")
-    for root, dirs, files in os.walk(space, topdown=False):
-        for f in files:
-            os.remove(Path(root) / f)
-        for d in dirs:
-            os.rmdir(Path(root) / d)
-    os.rmdir(space)
+    if not space.exists(): raise FileNotFoundError(f"Space '{name}' not found.")
+    for p in space.rglob("*"): p.unlink() if p.is_file() else None
+    for d in sorted((space).iterdir(), key=lambda x: x.is_file()): d.rmdir()
 
+# Build both docs and algos for a space
+def build_space_vs(name: str) -> None:
+    docs_dir = SPACES_DIR / name / "docs"
+    _build_vs(str(docs_dir))
 
-def build_vectorstore(space: str) -> None:
-    """Build vectorstore for a given space."""
-    space_dir = SPACES_DIR / space
-    docs_dir = space_dir / "docs"
-    vs_dir = space_dir / "vectorstore"
-    docs_dir.mkdir(parents=True, exist_ok=True)
-    vs_dir.mkdir(parents=True, exist_ok=True)
-    # Delegate to loader
-    _build_vectorstore(str(docs_dir))
+# Search within text docs
+def search_space(name: str, query: str, k: int = 5) -> List[str]:
+    vs_dir = SPACES_DIR / name / "vectorstore"
+    if not vs_dir.exists(): return []
+    db = FAISS.load_local(str(vs_dir), get_embedding)
+    return [d.page_content for d in db.similarity_search(query, k=k)]
 
-
-def search_space(space: str, query: str, k: int = 5) -> List[str]:
-    """Search within a given space."""
-    return _search(query, k)
+# Search within algorithms
+def search_space_algos(name: str, query: str, k: int = 5) -> List[str]:
+    algo_dir = SPACES_DIR / name / "vectorstore" / "algos"
+    if not algo_dir.exists(): return []
+    db = FAISS.load_local(str(algo_dir), get_embedding)
+    return [d.page_content for d in db.similarity_search(query, k=k)]

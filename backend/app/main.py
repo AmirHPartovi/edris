@@ -1,104 +1,75 @@
-# backend/app/main.py
+## File: backend/app/main.py
 from fastapi import FastAPI, BackgroundTasks, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from app.knowledge.manager import build_vectorstore, search_space, list_spaces  
-
-from pydantic import BaseModel
-from app.experts.translator import translate_input, translate_output
-from app.utils.router import route_query
-from app.knowledge.loader import build_vectorstore, search_knowledge, extract_algorithms
-from app.utils.postprocessor import post_process
-import os
-from utils.router import DOCS_PATH
-import logging
 from fastapi.staticfiles import StaticFiles
-from app.knowledge.manager import search_knowledge, retrieve_with_media
+from typing import List
 
-#logging
-logging.basicConfig(level=LOGGING_LEVEL, format=LOGGING_FORMAT)
-logger = logging.getLogger(__name__)
+from app.utils.config import (
+    BACKEND_HOST, BACKEND_PORT, FRONTEND_ORIGINS,
+    DOCS_PATH, SPACES_DIR
+)
+from app.knowledge.manager import (
+    list_spaces, create_space, delete_space,
+    build_space_vs, search_space, search_space_algos
+)
 
 app = FastAPI()
-# CORS for frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=FRONTEND_ORIGINS,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    allow_credentials=True,
+    allow_methods=["*"], allow_headers=["*"], allow_credentials=True,
 )
+
+# Serve media files
 app.mount("/media", StaticFiles(directory=str(DOCS_PATH / "media")), name="media")
-app.mount("/docs", StaticFiles(directory=str(DOCS_PATH / "docs")), name="docs")
 
-class ChatParams(BaseModel):
-    prompt: str
-    type: str = "text"
-    model: str = "deepseek-r1:latest"
-    temperature: float = 0.2
-    max_tokens: int = 512
-    top_p: float = 1.0
-    frequency_penalty: float = 0.0
-    presence_penalty: float = 0.0
-    stop: list[str] = ["\n\n"]
-    stream: bool = False
+# --- Space Management Endpoints ---
+@app.get("/spaces")
+def api_list_spaces():
+    return {"spaces": list_spaces()}
 
+@app.post("/spaces/{name}")
+def api_create_space(name: str, settings: dict):
+    create_space(name, settings)
+    return {"status": "created", "space": name}
 
-@app.post("/query")
-async def query_agent(params: ChatParams):
-    # 1. Translate Persian→English if needed
-    eng = translate_input(params.prompt)
-    # 2. Retrieve top‑5 knowledge docs
-    docs = search_knowledge(eng, k=5)
-    if not docs:
-        return {"response": "[NotFound ❌] No related docs in Knowledge Stack."}
-    context = "\n---\n".join(docs)
-    # 3. Handle `complete` command with fallback
-    # main.py (complete section)
-    if eng.lower().startswith("complete"):
-        algos = extract_algorithms(context)
-        if not algos:
-            return {"response": "[NotFound] No algorithm found."}
-        # fallback chunking
-        if len(context.split()) > 2000:
-            context = context.split("\n---\n")[0]
-            suggestion = "\nContext too large; showing first part only."
-        else:
-            suggestion = ""
-        raw = route_query(
-            f"Explain {algos[0]} step by step", context, model=params.model, **params.dict())
-        raw += suggestion+"\nDo you want next algorithm?"
-    else:
-        raw = route_query(prompt=eng, context=context, input_type=params.type,
-                         model=params.model, **params.dict(exclude={'prompt', 'type', 'model'}))
-    
-    # 5. Post-process formatting
-    processed = post_process(raw, params.prompt)
-    # 6. Translate back to Persian where appropriate
-    final = translate_output(processed, params.prompt)
-    return {"response": final}
+@app.delete("/spaces/{name}")
+def api_delete_space(name: str):
+    delete_space(name)
+    return {"status": "deleted", "space": name}
 
-@app.get("/query_with_media")
-def query_with_media(q: str, k: int = 5):
-    res = retrieve_with_media(q, k)
-    return res
-
+# --- Knowledge Upload and Build ---
 @app.post("/knowledge/upload/{space}")
-async def upload_knowledge(background_tasks: BackgroundTasks , space: str, files: list[UploadFile] = File(...)):
-    # save to spaces/<space>/docs
-    # ... (similar to before) ...
-    background_tasks.add_task(build_vectorstore, space)
-    return {"status": "scheduled", "space": space}
+async def api_upload_and_build(
+    background_tasks: BackgroundTasks,
+    space: str,
+    files: List[UploadFile] = File(...)
+):
+    docs_dir = SPACES_DIR / space / "docs"
+    docs_dir.mkdir(parents=True, exist_ok=True)
+    for f in files:
+        out_path = docs_dir / f.filename
+        with open(out_path, "wb") as out:
+            out.write(await f.read())
+    background_tasks.add_task(build_space_vs, space)
+    return {"status": "scheduled", "space": space, "files": [f.filename for f in files]}
 
-@app.get("/algorithms/search")
-def api_search_algorithms(q: str, k: int = 5):
-    """
-    Search for algorithm names without نیاز به دانستن نام دقیق.
-    """
-    return {"algorithms": search_algorithms(q, k)}
-
+# --- Query Endpoints ---
 @app.get("/knowledge/search/{space}")
-def search(space: str, query: str, k: int = 5):
-    return {"results": search_space(space, query, k)}
+def api_search_knowledge(space: str, q: str, k: int = 5):
+    return {"results": search_space(space, q, k)}
 
+@app.get("/algorithms/search/{space}")
+def api_search_algorithms(space: str, q: str, k: int = 5):
+    return {"algorithms": search_space_algos(space, q, k)}
+
+# --- Health Check ---
 @app.get("/health")
-async def health(): return {"status": "ok"}
+def health():
+    return {"status": "ok"}
+
+# Note: Run Uvicorn with config settings
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host=BACKEND_HOST, port=BACKEND_PORT)
+

@@ -31,8 +31,21 @@ class OllamaEmbeddings:
 
     def embed_query(self, text: str) -> List[float]:
         return get_embedding(text)
+# --- Algorithm Extraction ---
+def extract_algorithms(text: str) -> List[str]:
+    """Extract algorithm names supporting word, hyphens, underscores."""
+    patterns = [
+        r"Algorithm[:\s]+([\w\-]+)",
+        r"([\w\-]+)\s+algorithm",
+        r"(?:procedure|method)[:\s]*([\w\-]+)"
+    ]
+    algos = set()
+    for p in patterns:
+        for m in re.findall(p, text, flags=re.IGNORECASE):
+            algos.add(m.strip())
+    return list(algos)
 
-# --- File loaders ---
+# --- File Loaders ---
 def load_text_file(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="ignore")
 
@@ -60,10 +73,7 @@ def load_pdf_file(path: Path) -> str:
 
 def load_docx_file(path: Path) -> str:
     doc = DocxDocument(str(path))
-    texts: List[str] = []
-    for para in doc.paragraphs:
-        if para.text:
-            texts.append(para.text)
+    texts: List[str] = [p.text for p in doc.paragraphs if p.text]
     for table in doc.tables:
         for row in table.rows:
             texts.append(", ".join(cell.text for cell in row.cells))
@@ -79,7 +89,6 @@ def load_pptx_file(path: Path) -> str:
     return "\n".join(texts)
 
 def load_file(path: Path) -> str:
-    """Generic loader for supported file types"""
     ext = path.suffix.lower()
     if ext in [".txt", ".md"]:
         return load_text_file(path)
@@ -92,8 +101,6 @@ def load_file(path: Path) -> str:
     if ext in [".pptx", ".ppt"]:
         return load_pptx_file(path)
     raise ValueError(f"Unsupported file type: {ext}")
-
-# Alias for manager.py compatibility
 
 def load_pdf_documents(path: Path) -> List[Document]:
     """Load a PDF and return as a single Document"""
@@ -144,52 +151,45 @@ def extract_media_from_html(html: str, source_path: Path):
 
     return media
 
-# --- Vectorstore ---
-def build_vectorstore(source_dir: str = None):
-    """Build the FAISS vectorstore from all supported documents."""
+
+# --- Vectorstore Builder ---
+def build_vectorstore(source_dir: Optional[str] = None):
     src = Path(source_dir) if source_dir else DOCS_PATH
     src.mkdir(parents=True, exist_ok=True)
     VECTORSTORE_PATH.mkdir(parents=True, exist_ok=True)
 
-    files = []
-    for ext in ["*.md", "*.txt", "*.csv", "*.pdf", "*.docx", "*.pptx", "*.ppt"]:
-        files.extend(src.rglob(ext))
-    media_index = []
-    documents = []
-    algo_names = []
+    # gather all supported files
+    patterns = ["*.md", "*.txt", "*.csv", "*.pdf", "*.docx", "*.pptx", "*.ppt"]
+    files = [p for pattern in patterns for p in src.rglob(pattern)]
+
+    documents, metadatas = [], []
+    all_algos = []
+
     for fp in files:
         content = load_file(fp)
-        docs = split_text_to_documents(content, metadata={"source": str(fp)})
-        documents.extend(docs)
-            # اگر فایل HTML/MD است، استخراج رسانه
-        if fp.suffix.lower() in [".md", ".html", ".htm"]:
-            media = extract_media_from_html(content, fp)
-        # هر رسانه را به‌عنوان یک Document جداگانۀ بدون embedding ذخیره
-            for m in media:
-                media_index.append({**m, "source": str(fp)})
-        for md in metadatas:
-            for name in md.get("algorithms", []):
-                algo_names.append(name)
-        algo_docs = [Document(page_content=algo) for algo in set(algo_names)]
-        algo_meta = [{"algorithm": algo} for algo in set(algo_names)]
+        documents.append(Document(page_content=content, metadata={"source": str(fp)}))
+        metadatas.append({"source": str(fp), "algorithms": extract_algorithms(content)})
+        all_algos.extend(extract_algorithms(content))
 
     if not documents:
         print("No documents to index.")
         return
-    # 2. ساخت اسناد الگوریتم
 
-    embeddings = OllamaEmbeddings()
-    db = FAISS.from_documents(documents, embeddings)
+    # index text docs
+    embeddings_fn = get_embedding
+    db = FAISS.from_documents(documents, embeddings_fn, metadatas=metadatas)
     db.save_local(str(VECTORSTORE_PATH))
-    with open(VECTORSTORE_PATH / "media_index.json", "w", encoding="utf-8") as f:
-        json.dump(media_index, f, ensure_ascii=False, indent=2)
-    print(f"Built vectorstore with {len(documents)} docs at {VECTORSTORE_PATH}.")
-    if algo_docs:
-        algo_dir = VECTORSTORE_DIR / "algos"
+    print(f"Built text vectorstore with {len(documents)} docs.")
+
+    # index unique algorithms
+    unique_algos = set(all_algos)
+    if unique_algos:
+        algo_docs = [Document(page_content=a, metadata={}) for a in unique_algos]
+        algo_dir = VECTORSTORE_PATH / "algos"
         algo_dir.mkdir(parents=True, exist_ok=True)
-        algo_db = FAISS.from_documents(algo_docs, embedding_fn, metadatas=algo_meta)
+        algo_db = FAISS.from_documents(algo_docs, embeddings_fn)
         algo_db.save_local(str(algo_dir))
-        print(f"Built algorithm index with {len(algo_docs)} unique names.")
+        print(f"Built algorithm index with {len(unique_algos)} algos.")
 
 
 def search_knowledge(query: str, k: int = 5) -> Optional[List[str]]:
@@ -226,21 +226,6 @@ def retrieve_with_media(query: str, k: int = 5):
     return {"texts": [d.page_content for d in texts], "media": related_media}
 
 
-def extract_algorithms(text: str) -> List[str]:
-    """
-    Extract algorithm names via multiple regex patterns,
-    supporting word-characters, hyphens, and underscores.
-    """
-    patterns = [
-        r"Algorithm[:\\s]+([\\w\\-]+)",        # Algorithm: Name or Algorithm Name
-        r"([\\w\\-]+)\\s+algorithm",           # Name algorithm
-        r"(?:procedure|method)[:\\s]*([\\w\\-]+)"  # procedure Name or method Name
-    ]
-    algos = set()
-    for p in patterns:
-        for m in re.findall(p, text, flags=re.IGNORECASE):
-            algos.add(m.strip())
-    return list(algos)
 
 
 if __name__ == "__main__":
