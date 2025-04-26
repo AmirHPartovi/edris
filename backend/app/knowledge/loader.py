@@ -18,16 +18,10 @@ from langchain_community.vectorstores import FAISS
 from langchain.docstore.document import Document
 
 from app.utils.embedder import get_embedding
+from app.utils.router import DOCS_PATH, VECTORSTORE_PATH ,IMAGE_CACHE_PATH
 
-# Directory paths
-DOCS_DIR = Path("backend/app/knowledge/docs")
-VECTORSTORE_DIR = Path("backend/app/knowledge/vectorstore")
-IMAGE_CACHE_DIR = Path("backend/app/knowledge/images")
 
-# Ensure directories exist
-DOCS_DIR.mkdir(parents=True, exist_ok=True)
-VECTORSTORE_DIR.mkdir(parents=True, exist_ok=True)
-IMAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
 
 
 class OllamaEmbeddings:
@@ -118,27 +112,25 @@ def load_document(path: Path) -> str:
     # return ""
 
 
-def build_vectorstore(source_dir: Path = DOCS_DIR):
-    """Read all docs, chunk, embed, and save FAISS index (with metadata)."""
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000, chunk_overlap=200)
-    # prepare FAISS index
-    def embedding_fn(txt): return get_embedding(txt)
-    docs: List[Document] = []
-    metadatas: List[Dict[str, Any]] = []
-    # load all documents
-    source_path = Path(source_dir)
-    for file in source_path.rglob("*.*"):
-        content = load_document(file)
-        for chunk in splitter.split_text(content):
-            docs.append(Document(page_content=chunk))
-            metadatas.append({
-                "source": str(file),
-                "algorithms": extract_algorithms(chunk)
-            })
-    if docs:
-        db = FAISS.from_documents(docs, embedding_fn)
-        db.save_local(str(VECTORSTORE_DIR))
+def build_vectorstore(source_dir: str = None):
+    """Build the vectorstore from documents."""
+    src = Path(source_dir) if source_dir else VECTORSTORE_PATH.parent / "docs"
+    src.mkdir(parents=True, exist_ok=True)
+    VECTORSTORE_PATH.mkdir(parents=True, exist_ok=True)
+
+    # جمع‌آوری اسناد متنی
+    files = list(src.rglob("*.md")) + list(src.rglob("*.txt")) + list(src.rglob("*.csv")) + list(src.rglob("*.pdf"))
+    documents = [Document(page_content=fp.read_text(encoding="utf-8")) for fp in files]
+
+    if not documents:
+        print("No documents to index.")
+        return
+
+    embeddings = OllamaEmbeddings()
+    db = FAISS.from_documents(documents, embeddings)
+    VECTORSTORE_PATH_str = str(VECTORSTORE_PATH)
+    db.save_local(VECTORSTORE_PATH_str)
+    print(f"Built vectorstore with {len(documents)} docs at {VECTORSTORE_PATH_str}.")
 
 
 def search_knowledge(query: str, k: int = 5) -> Optional[List[str]]:

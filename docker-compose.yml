@@ -20,8 +20,8 @@ services:
     env_file:
       - backend/.env
     volumes:
-      - ./backend/app/knowledge/docs:/app/app/knowledge/docs
-      - ./backend/app/knowledge/vectorstore:/app/app/knowledge/vectorstore
+      - ./backend/app/knowledge/docs:/app/knowledge/docs
+      - ./backend/app/knowledge/vectorstore:/app/knowledge/vectorstore
       - ./config.yaml:/app/config.yaml:ro
     depends_on:
       - ollama

@@ -7,13 +7,21 @@ from app.utils.router import route_query
 from app.knowledge.loader import build_vectorstore, search_knowledge, extract_algorithms
 from app.utils.postprocessor import post_process
 import os
+from utils.router import DOCS_PATH
+import logging
+
+#logging
+logging.basicConfig(level=LOGGING_LEVEL, format=LOGGING_FORMAT)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 # CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv('FRONTEND_ORIGIN', 'http://localhost:5173')],
-    allow_methods=['*'], allow_headers=['*'], allow_credentials=True
+    allow_origins=FRONTEND_ORIGINS,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=True,
 )
 
 
@@ -66,14 +74,21 @@ async def query_agent(params: ChatParams):
 
 
 @app.post("/knowledge/upload")
-async def upload_knowledge(files: list[UploadFile] = File(...), background_tasks: BackgroundTasks = None):
-    upload_dir = "backend/app/knowledge/docs"
-    os.makedirs(upload_dir, exist_ok=True)
-    for f in files:
-        with open(os.path.join(upload_dir, f.filename), 'wb') as out:
-            out.write(await f.read())
-            background_tasks.add_task(build_vectorstore, Path(upload_dir))
+async def upload_knowledge(
+    background_tasks: BackgroundTasks,
+    files: list[UploadFile] = File(...)
+):
+    # استفاده مستقیم از DOCS_PATH
+    DOCS_PATH.mkdir(parents=True, exist_ok=True)
 
+    for f in files:
+        out_path = DOCS_PATH / f.filename
+        with open(out_path, "wb") as out:
+            out.write(await f.read())
+
+    # فراخوانی تابع با پارامتر string مسیر
+    background_tasks.add_task(build_vectorstore, str(DOCS_PATH))
+    logger.info(f"Received {len(files)} files, scheduled vectorstore build.")
     return {"status": "upload received", "files": [f.filename for f in files]}
 
 

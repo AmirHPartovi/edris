@@ -1,31 +1,19 @@
-# === تنظیمات Ollama ===
-ollama:
-  api_url: http://localhost:11434/api/generate
-  default_model: deepseek-r1
-
-# === تعریف Experts ===
-experts:
-  codegemma:
-    model: codegemma
-  deepseek:
-    model: deepseek-r1
-  llava:
-    model: llava
-  translator:
-    p2e_model: hf.co/gyroing/Persian-to-English-Translation-mT5-V1-Q8_0-GGUF
-    e2p_model: hf.co/gyroing/English-to-Persian-Translation-mT5-V1-Q8_0-GGUF
-
-# === تنظیمات Backend ===
+# config.yaml
 backend:
+  host: 0.0.0.0
   port: 8000
   frontend_origins:
     - http://localhost:3000
     - http://localhost:5173
-    - http://127.0.0.1:3000
 
-# === مسیرهای Knowledge Base ===
 vectorstore:
-  # مسیر دایرکتوری اسناد (Docs) برای ساخت VectorStore
   docs_path: ./backend/app/knowledge/docs
-  # مسیر نگهداری VectorStore
   store_path: ./backend/app/knowledge/vectorstore
+
+ollama:
+  api_url: http://ollama:11434/api/generate
+  model: deepseek-r1:latest
+
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
