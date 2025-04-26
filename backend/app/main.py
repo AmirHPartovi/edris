@@ -89,6 +89,12 @@ async def upload_knowledge(background_tasks: BackgroundTasks , space: str, files
     background_tasks.add_task(build_vectorstore, space)
     return {"status": "scheduled", "space": space}
 
+@app.get("/algorithms/search")
+def api_search_algorithms(q: str, k: int = 5):
+    """
+    Search for algorithm names without نیاز به دانستن نام دقیق.
+    """
+    return {"algorithms": search_algorithms(q, k)}
 
 @app.get("/knowledge/search/{space}")
 def search(space: str, query: str, k: int = 5):

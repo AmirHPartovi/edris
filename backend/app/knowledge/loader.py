@@ -156,6 +156,7 @@ def build_vectorstore(source_dir: str = None):
         files.extend(src.rglob(ext))
     media_index = []
     documents = []
+    algo_names = []
     for fp in files:
         content = load_file(fp)
         docs = split_text_to_documents(content, metadata={"source": str(fp)})
@@ -166,10 +167,16 @@ def build_vectorstore(source_dir: str = None):
         # هر رسانه را به‌عنوان یک Document جداگانۀ بدون embedding ذخیره
             for m in media:
                 media_index.append({**m, "source": str(fp)})
+        for md in metadatas:
+            for name in md.get("algorithms", []):
+                algo_names.append(name)
+        algo_docs = [Document(page_content=algo) for algo in set(algo_names)]
+        algo_meta = [{"algorithm": algo} for algo in set(algo_names)]
 
     if not documents:
         print("No documents to index.")
         return
+    # 2. ساخت اسناد الگوریتم
 
     embeddings = OllamaEmbeddings()
     db = FAISS.from_documents(documents, embeddings)
@@ -177,6 +184,12 @@ def build_vectorstore(source_dir: str = None):
     with open(VECTORSTORE_PATH / "media_index.json", "w", encoding="utf-8") as f:
         json.dump(media_index, f, ensure_ascii=False, indent=2)
     print(f"Built vectorstore with {len(documents)} docs at {VECTORSTORE_PATH}.")
+    if algo_docs:
+        algo_dir = VECTORSTORE_DIR / "algos"
+        algo_dir.mkdir(parents=True, exist_ok=True)
+        algo_db = FAISS.from_documents(algo_docs, embedding_fn, metadatas=algo_meta)
+        algo_db.save_local(str(algo_dir))
+        print(f"Built algorithm index with {len(algo_docs)} unique names.")
 
 
 def search_knowledge(query: str, k: int = 5) -> Optional[List[str]]:
@@ -187,6 +200,16 @@ def search_knowledge(query: str, k: int = 5) -> Optional[List[str]]:
     results = db.similarity_search(query, k=k)
     return [doc.page_content for doc in results]
 
+def search_algorithms(query: str, k: int = 5) -> List[str]:
+    """
+    Retrieve top-k algorithm names semantically similar to the query.
+    """
+    algo_dir = VECTORSTORE_DIR / "algos"
+    if not algo_dir.exists():
+        return []
+    db = FAISS.load_local(str(algo_dir), embedding_fn)
+    results = db.similarity_search(query, k=k)
+    return [doc.page_content for doc in results]
 
 
 def retrieve_with_media(query: str, k: int = 5):
@@ -204,9 +227,15 @@ def retrieve_with_media(query: str, k: int = 5):
 
 
 def extract_algorithms(text: str) -> List[str]:
-    """Extract algorithm names via multiple regex patterns."""
-    patterns = [r"Algorithm:\s*(\w+)", r"(\w+)\s+algorithm",
-                r"(?:procedure|method)\s+(\w+)"]
+    """
+    Extract algorithm names via multiple regex patterns,
+    supporting word-characters, hyphens, and underscores.
+    """
+    patterns = [
+        r"Algorithm[:\\s]+([\\w\\-]+)",        # Algorithm: Name or Algorithm Name
+        r"([\\w\\-]+)\\s+algorithm",           # Name algorithm
+        r"(?:procedure|method)[:\\s]*([\\w\\-]+)"  # procedure Name or method Name
+    ]
     algos = set()
     for p in patterns:
         for m in re.findall(p, text, flags=re.IGNORECASE):
