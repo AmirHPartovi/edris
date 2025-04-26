@@ -11,7 +11,7 @@ import fitz                             # PyMuPDF for PDF text & images
 import pytesseract
 # table extraction from PDFs :contentReference[oaicite:1]{index=1}
 # import camelot
-import python_docx as docx                     # python-docx for .docx text & tables
+# import python_docx as docx                     # python-docx for .docx text & tables
 from langchain.text_splitter import RecursiveCharacterTextSplitter  # chunking
 # FAISS vectorstore
 from langchain_community.vectorstores import FAISS
@@ -107,15 +107,15 @@ def load_document(path: Path) -> str:
                 img = pix.pil_image()  # PIL image
                 text_chunks.append(pytesseract.image_to_string(img))
         return "\n".join(text_chunks)
-    if ext == ".docx":
-        doc = docx.Document(str(path))
-        paras = [p.text for p in doc.paragraphs if p.text]
-        # extract tables as CSV-like text
-        for table in doc.tables:
-            for row in table.rows:
-                paras.append(", ".join(cell.text for cell in row._cells))
-        return "\n".join(paras)
-    return ""
+    # if ext == ".docx":
+    #     doc = docx.Document(str(path))
+    #     paras = [p.text for p in doc.paragraphs if p.text]
+    #     # extract tables as CSV-like text
+    #     for table in doc.tables:
+    #         for row in table.rows:
+    #             paras.append(", ".join(cell.text for cell in row._cells))
+    #     return "\n".join(paras)
+    # return ""
 
 
 def build_vectorstore(source_dir: Path = DOCS_DIR):
@@ -126,7 +126,9 @@ def build_vectorstore(source_dir: Path = DOCS_DIR):
     def embedding_fn(txt): return get_embedding(txt)
     docs: List[Document] = []
     metadatas: List[Dict[str, Any]] = []
-    for file in source_dir.rglob("*.*"):
+    # load all documents
+    source_path = Path(source_dir)
+    for file in source_path.rglob("*.*"):
         content = load_document(file)
         for chunk in splitter.split_text(content):
             docs.append(Document(page_content=chunk))

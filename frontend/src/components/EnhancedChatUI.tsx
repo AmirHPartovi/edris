@@ -19,7 +19,7 @@ import {
   Folder, // Added for knowledge stack icon
   Trash2 // Added for deleting knowledge stacks
 } from "lucide-react";
-
+import { Message, ModelSettings, sendMessage, uploadKnowledgeFiles } from "../api"; // Adjust the import path as necessary
 type ThemeColorType = 'indigo' | 'emerald' | 'rose' | 'amber' | 'blue';
 
 interface DirectionDetectionParams {
@@ -32,10 +32,23 @@ interface KnowledgeStack {
   files: File[];
 }
 
-interface ModelSettings {
-  temperature: number;
-  top_p: number;
-  max_tokens: number;
+interface EnhancedChatUIState {
+  messages: Message[];
+  input: string;
+  isLoading: boolean;
+  isSidebarOpen: boolean;
+  isDarkMode: boolean;
+  isRTL: boolean;
+  isSettingsOpen: boolean;
+  isModelSettingsOpen: boolean;
+  isKnowledgeStackOpen: boolean;
+  themeColor: ThemeColorType;
+  activeModes: string[];
+  modelSettings: ModelSettings;
+  knowledgeStacks: KnowledgeStack[];
+  activeKnowledgeStacks: string[];
+  newStackName: string;
+  selectedFiles: Record<string, File[]>;
 }
 
 export default function EnhancedChatUI() {
@@ -142,21 +155,27 @@ const detectTextDirection = (text: string): boolean => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: input,
-          history: newMessages,
-          modes: activeModes,
-          modelSettings: modelSettings,
-          knowledgeStacks: activeKnowledgeStacks,
-        }),
+      const { response } = await sendMessage({
+        prompt: input,
+        type: "text",
+        history: newMessages,
+        modes: activeModes,
+        modelSettings: {
+          temperature: modelSettings.temperature,
+          top_p: modelSettings.top_p,
+          max_tokens: modelSettings.max_tokens,
+        },
+        knowledgeStacks: activeKnowledgeStacks,
       });
-      const data = await response.json();
-      setMessages([...newMessages, { role: "assistant", content: data.message }]);
+
+      setMessages([...newMessages, { role: "assistant", content: response }]);
     } catch (error) {
       console.error("Error sending message:", error);
+      // Add error handling UI feedback here
+      setMessages([...newMessages, { 
+        role: "assistant", 
+        content: "Sorry, I encountered an error. Please try again." 
+      }]);
     } finally {
       setIsLoading(false);
     }

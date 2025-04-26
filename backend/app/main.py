@@ -72,7 +72,8 @@ async def upload_knowledge(files: list[UploadFile] = File(...), background_tasks
     for f in files:
         with open(os.path.join(upload_dir, f.filename), 'wb') as out:
             out.write(await f.read())
-    background_tasks.add_task(lambda: build_vectorstore(source_dir=upload_dir))
+            background_tasks.add_task(build_vectorstore, Path(upload_dir))
+
     return {"status": "upload received", "files": [f.filename for f in files]}
 
 
