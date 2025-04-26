@@ -4,9 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from typing import List
 
+
 from utils.config import (
     BACKEND_HOST, BACKEND_PORT, FRONTEND_ORIGINS,
-    DOCS_PATH, SPACES_DIR
+    DOCS_PATH, SPACES_DIR ,DOCS_PATH, VECTORSTORE_PATH,
+    ALGOS_PATH, MEDIA_DIR
 )
 from knowledge.manager import (
     list_spaces, create_space, delete_space,
