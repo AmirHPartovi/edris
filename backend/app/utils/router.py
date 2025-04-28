@@ -133,48 +133,7 @@ def delete_document(doc_id):
         logger.error(f"Error deleting document: {str(e)}")
         return False
 
-# Translation functions
-def translate_persian_to_english(text: str) -> str:
-    """Translates Persian text to English using expert P2E function"""
-    try:
-        # Here you would call your actual P2E service/function
-        # This is a placeholder - implement your actual translation method
-        response = ollama.chat(model="deepseek-r1", 
-                              messages=[
-                                  {"role": "system", "content": "You are an expert Persian to English translator. Translate the following Persian text to English."},
-                                  {"role": "user", "content": text}
-                              ])
-        return response['message']['content']
-    except Exception as e:
-        logger.error(f"Translation P2E error: {str(e)}")
-        # Return original text if translation fails
-        return text
 
-def translate_english_to_persian(text: str) -> str:
-    """Translates English text to Persian using expert E2P function"""
-    try:
-        # Here you would call your actual E2P service/function
-        # This is a placeholder - implement your actual translation method
-        response = ollama.chat(model="deepseek-r1", 
-                              messages=[
-                                  {"role": "system", "content": "You are an expert English to Persian translator. Translate the following English text to Persian."},
-                                  {"role": "user", "content": text}
-                              ])
-        return response['message']['content']
-    except Exception as e:
-        logger.error(f"Translation E2P error: {str(e)}")
-        # Return original text if translation fails
-        return text
-
-def detect_language(text: str) -> str:
-    """Detect the language of input text"""
-    try:
-        # Persian language is detected as 'fa'
-        lang = detect(text)
-        return lang
-    except:
-        # Default to English if detection fails
-        return "en"
 
 def format_algorithm_explanation(algorithm_name: str, algorithm_data: dict) -> str:
     """Format the algorithm explanation with all required details"""
@@ -315,9 +274,10 @@ async def process_fullcomplete_request(query: str):
 @router.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     start_time = datetime.now()
-    
+    """Chat endpoint for processing user messages"""
     try:
         # Get the latest user message
+        logger.info(f"Received chat request: {request}")
         if not request.messages or len(request.messages) == 0:
             raise HTTPException(status_code=400, detail="No messages provided")
         
@@ -375,7 +335,7 @@ async def chat_endpoint(request: ChatRequest):
                 stream=request.stream,
                 options=request.options
             )
-            
+            logger.info(f"Ollama response: {response}")
             response_text = ollama_response['message']['content']
         
         # Step 4: Translate response back if original was Persian
@@ -440,6 +400,7 @@ async def process_document_endpoint(file_path: str = Body(...)):
             "message": f"Document processed and added to vector store with ID: {doc_id}"
         }
     except Exception as e:
+        
         logger.error(f"Error processing document: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
 
