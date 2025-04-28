@@ -15,6 +15,8 @@ import uuid
 from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings, HuggingFaceEmbeddings
 from langchain.schema.document import Document
+from  experts.translator import translate_english_to_persian, translate_persian_to_english
+from experts.translator import detect_language
 
 # Import your existing modules
 sys.path.append(str(Path(__file__).parent.parent))

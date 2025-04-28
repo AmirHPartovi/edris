@@ -10,7 +10,7 @@ from docx import Document as DocxDocument  # python-docx for .docx
 from pptx import Presentation  # python-pptx for .pptx slides
 from langchain.docstore.document import Document
 from langchain_community.vectorstores import FAISS
-from utils.embedder import get_embedding
+from backend.app.experts.embedder import get_embedding
 from utils.config import DOCS_PATH, VECTORSTORE_PATH
 from bs4 import BeautifulSoup
 import pandas as pd
