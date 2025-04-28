@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from typing import List
-from utils.router import ChatRequest, ChatResponse , chat_endpoint
+from utils.router import chat_endpoint as chat_handler, ChatRequest, ChatResponse
 
 from utils.config import (
     BACKEND_HOST, BACKEND_PORT, FRONTEND_ORIGINS,
@@ -82,8 +82,9 @@ def health():
     return {"status": "ok"}
 
 @app.post("/chat", response_model=ChatResponse)
-def chat_endpoint(request: ChatRequest):
-    return response
+async def chat_endpoint(request: ChatRequest):
+    # اینجا مستقیماً به تابع اصلی ارجاع می‌دهیم
+    return await chat_handler(request)
 # Note: Run Uvicorn with config settings
 if __name__ == "__main__":
     import uvicorn

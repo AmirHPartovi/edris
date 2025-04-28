@@ -155,7 +155,7 @@ with tab3:
     
     # Chat settings
     st.sidebar.subheader("Chat Settings")
-    model_name = st.sidebar.text_input("Model Name", value="llama3")
+    model_name = st.sidebar.text_input("Model Name", value="deepseek-r1")
     st.sidebar.info("Type 'fullcomplete' in your message to get detailed algorithm explanations")
     
     # Initialize chat history

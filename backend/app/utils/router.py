@@ -36,7 +36,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
-    model: str = "llama3"
+    model: str = "deepseek-r1"
     stream: bool = False
     options: Optional[Dict[str, Any]] = None
 
@@ -139,7 +139,7 @@ def translate_persian_to_english(text: str) -> str:
     try:
         # Here you would call your actual P2E service/function
         # This is a placeholder - implement your actual translation method
-        response = ollama.chat(model="llama3", 
+        response = ollama.chat(model="deepseek-r1", 
                               messages=[
                                   {"role": "system", "content": "You are an expert Persian to English translator. Translate the following Persian text to English."},
                                   {"role": "user", "content": text}
@@ -155,7 +155,7 @@ def translate_english_to_persian(text: str) -> str:
     try:
         # Here you would call your actual E2P service/function
         # This is a placeholder - implement your actual translation method
-        response = ollama.chat(model="llama3", 
+        response = ollama.chat(model="deepseek-r1", 
                               messages=[
                                   {"role": "system", "content": "You are an expert English to Persian translator. Translate the following English text to Persian."},
                                   {"role": "user", "content": text}
@@ -277,7 +277,7 @@ async def process_fullcomplete_request(query: str):
         
         try:
             # Here you would call your LLM to structure the algorithm information
-            llm_response = ollama.chat(model="llama3", 
+            llm_response = ollama.chat(model="deepseek-r1", 
                                       messages=[{"role": "user", "content": prompt}])
             
             # Parse the LLM response to extract structured information
@@ -367,6 +367,8 @@ async def chat_endpoint(request: ChatRequest):
                     logger.error(f"Error retrieving context: {str(e)}")
             
             # Call Ollama for regular chat
+            print(f"Trying to chat with model: {processed.model}")
+            print(f"Messages: {processed.messages}")
             ollama_response = ollama.chat(
                 model=request.model,
                 messages=processed_messages,

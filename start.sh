@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-command -v docker >/dev/null 2>&1 || { echo >&2 "Docker نصب نیست"; exit 1; }
+command -v docker >/dev/null 2>&1 || { echo >&2 "Docker Not Installed "; exit 1; }
 
 # پاکسازی و بیلد مجدد
 docker compose down --volumes
